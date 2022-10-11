@@ -9,10 +9,22 @@ using namespace std;
 template<typename T>
 void printList(List<T>* pList) {
     cout << "[";
-    for (int index = 0; index < pList->getSize();) {
-        Door* data = pList->get(index++)->data;
+    for (int index = pList->getSize()-1; index >= 0; --index) {
+        Door* data = pList->get(index)->data;
         cout << data->getID();
-        if (index != pList->getSize()) {
+        if (index != 0) {
+            cout << ", ";
+        }
+    }
+    cout << "]";
+}
+
+void printIntList(List<int>* pList) {
+    cout << "[";
+    for (int index = pList->getSize()-1; index >= 0; --index) {
+        int* data = pList->get(index);
+        cout << *data;
+        if (index != 0) {
             cout << ", ";
         }
     }
@@ -31,7 +43,7 @@ List<T>* findPending(List<T>* pPathList, List<T>* pClearedList) {
     return pendingList;
 }
 
-void pathFinding(Tree<Door>* pDoorMap) {
+void pathFindingV1(Tree<Door>* pDoorMap) {
     List<TreeNode<Door>>* currentList = new List<TreeNode<Door>>;
     Stack<TreeNode<Door>>* currentPath = currentList;
     List<TreeNode<Door>>* clearedOptions = new List<TreeNode<Door>>;
@@ -64,5 +76,87 @@ void pathFinding(Tree<Door>* pDoorMap) {
         }
         cout << "------------------------------------------------" << endl;
     }
-
 }
+
+void pathFindingV2(Tree<Door>* pDoorMap) {
+    typedef TreeNode<Door> Path;
+    List<Path>* currentList = new List<Path>;
+    List<int>* optionsList = new List<int>;
+    Stack<Path>* currentPath = currentList;
+    Stack<int>* pendingPaths = optionsList;
+
+    List<Path>* pathList;
+    int* optionsLeft;
+
+    currentPath->push(pDoorMap->getRoot()); // Push del root path
+
+    // Prepara root options
+    pathList = currentPath->top()->children;
+    optionsLeft = new int(pathList->getSize());
+    pendingPaths->push( optionsLeft );
+
+    while (! optionsList->isEmpty()) {
+        cout << "Current Path: "; printList(currentList); cout << endl;
+        cout << "Pending Paths: "; printIntList(optionsList); cout << endl;
+
+        // Revisa opciones disponibles
+        optionsLeft = pendingPaths->top();
+        bool isCleared = (*optionsLeft < 1);
+        cout << "Is Cleared: " << isCleared << endl;
+
+        if (isCleared) {
+            Path* discarded = currentPath->pop();
+            pendingPaths->pop();
+            cout << "Cleared Door #" << discarded->data->getID() << endl;
+            // Actualiza pathList para siguiente iteracion
+            if (! currentPath->isEmpty()) {
+                pathList = currentPath->top()->children;
+            }
+        } else {
+            Path* choice = pathList->get(--(*optionsLeft));
+            currentPath->push(choice);
+            pathList = choice->children;
+            optionsLeft = new int(pathList->getSize());
+            pendingPaths->push(optionsLeft);
+            cout << "Entered Door #" << choice->data->getID() << endl;
+        }
+        cout << "------------------------------------------------" << endl;
+    }
+}
+
+// KeyPar<Path, PathOptions>
+// = [0:3, 1:2, 4:2, 5:0, 2:3, 6:0, 7:0, 8:0, 3:2, 9:0, 10:0]
+
+// currentPath: [ 0
+// pendingPaths: [
+// pathList: [
+
+// optionsLeft: -
+// isCleared: -
+
+/* Map:
+0:[
+    1:[      
+        4:[
+            11:[],
+
+            12:[]
+        ],
+
+        5:[],
+     ],      
+
+    2:[
+        6:[],
+
+        7:[],
+
+        8:[],
+     ],
+
+    3:[
+        9:[],
+
+        10:[],
+     ],
+], */
